@@ -28,14 +28,13 @@ class Token:
 	def __repr__(self):
 		return self.__str__()
 
-class Interpreter:
+class Lexer:
 	def __init__(self, text):
 		# user input e.g., "3+5"
 		self._text = text
 		# self._pos is an index into self._text
 		self._pos = 0
 		# current token instance
-		self._current_token = None
 		self._current_char = self._text[self._pos]
 
 	def error(self):
@@ -97,39 +96,40 @@ class Interpreter:
 
 		return Token(EOF, None)
 
-    ##########################################################
-    # Parser / Interpreter code                              #
-    ##########################################################
+
+class Interpreter:
+	def __init__(self, lexer):
+		self._lexer = lexer
+		self._current_token = self._lexer.get_next_token()
+
 	def eat(self, token_type):
 
 		if self._current_token.type == token_type:
-			self._current_token = self.get_next_token()
+			self._current_token = self._lexer.get_next_token()
 		else:
 			self.error()
 
-	def term(self):
+	def factor(self):
 		token = self._current_token
 		self.eat(INTEGER)
 		return token.value
 
 	def expr(self):
-		self._current_token = self.get_next_token()
-
-		result = self.term()
+		result = self.factor()
 		while self._current_token.type in (PLUS, MINUS, MULT, DIV):
 			token = self._current_token
 			if token.type == PLUS:
 				self.eat(PLUS)
-				result = result + self.term()
+				result = result + self.factor()
 			elif token.type == MINUS:
 				self.eat(MINUS)
-				result = result - self.term()
+				result = result - self.factor()
 			elif token.type == DIV:
 				self.eat(DIV)
-				result = result / self.term()
+				result = result / self.factor()
 			elif token.type == MULT:
 				self.eat(MULT)
-				result = result * self.term()
+				result = result * self.factor()
 			else:
 				self.error()
 
@@ -144,7 +144,8 @@ def main():
 	
 		if not text:
 			continue
-		interpreter = Interpreter(text)
+		lexer = Lexer(text)
+		interpreter = Interpreter(lexer)
 		result = interpreter.expr()
 		print(result)
 
