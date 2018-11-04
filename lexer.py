@@ -5,6 +5,8 @@ EOF = 'EOF'
 MINUS = 'MINUS'
 DIV = 'DIV'
 MULT = 'MULT'
+LPAREN = '('
+RPAREN = ')'
 
 
 class ParseException(Exception): pass
@@ -92,6 +94,14 @@ class Lexer:
 				self.advance()
 				return Token(DIV, '/')
 
+			if self._current_char == '(':
+				self.advance()
+				return Token(LPAREN, '(')
+
+			if self._current_char == ')':
+				self.advance()
+				return Token(RPAREN, ')')
+
 			self.error()
 
 		return Token(EOF, None)
@@ -110,13 +120,19 @@ class Interpreter:
 		if self._current_token.type == token_type:
 			self._current_token = self._lexer.get_next_token()
 		else:
-			self.error()
+			self._lexer.error()
 
 	def factor(self):
-		""" factor: INTETER"""
+		""" factor: INTEGER | LPAREN expr RPAREN"""
 		token = self._current_token
-		self.eat(INTEGER)
-		return token.value
+		if token.type == INTEGER:
+			self.eat(INTEGER)
+			return token.value
+		elif token.type == LPAREN:
+			self.eat(LPAREN)
+			result = self.expr()
+			self.eat(RPAREN)
+			return result
 
 	def term(self):
 		"""term: factor((MULT | DIV) factor)* 
