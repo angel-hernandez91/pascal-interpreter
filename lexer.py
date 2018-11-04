@@ -30,7 +30,7 @@ class Token:
 
 class Lexer:
 	def __init__(self, text):
-		# user input e.g., "3+5"
+		# client string input, e.g. "3 * 5", "12 / 3 * 4", etc
 		self._text = text
 		# self._pos is an index into self._text
 		self._pos = 0
@@ -103,35 +103,53 @@ class Interpreter:
 		self._current_token = self._lexer.get_next_token()
 
 	def eat(self, token_type):
-
+		""" Compare the current token type with the passed token
+		If they match, eat the current token and assign the next token
+		to the current token.
+		"""
 		if self._current_token.type == token_type:
 			self._current_token = self._lexer.get_next_token()
 		else:
 			self.error()
 
 	def factor(self):
+		""" factor: INTETER"""
 		token = self._current_token
 		self.eat(INTEGER)
 		return token.value
 
-	def expr(self):
+	def term(self):
+		"""term: factor((MULT | DIV) factor)* 
+		"""
 		result = self.factor()
-		while self._current_token.type in (PLUS, MINUS, MULT, DIV):
+		while self._current_token.type in (MULT, DIV):
 			token = self._current_token
-			if token.type == PLUS:
-				self.eat(PLUS)
-				result = result + self.factor()
-			elif token.type == MINUS:
-				self.eat(MINUS)
-				result = result - self.factor()
+			if token.type == MULT:
+				self.eat(MULT)
+				result = result * self.factor()
 			elif token.type == DIV:
 				self.eat(DIV)
 				result = result / self.factor()
-			elif token.type == MULT:
-				self.eat(MULT)
-				result = result * self.factor()
-			else:
-				self.error()
+		return result
+
+	def expr(self):
+		"""Arithmetic expression parser / interpreter
+		pascal> 14 + 2 * 3 - 6 / 2
+		17
+
+		expr 	: term((PLUS | MINUS) term)*
+		term	: factor((MULT | DIV) factor)*
+		factor	: INTEGER
+		"""
+		result = self.term()
+		while self._current_token.type in (PLUS, MINUS):
+			token = self._current_token
+			if token.type == PLUS:
+				self.eat(PLUS)
+				result = result + self.term()
+			elif token.type == MINUS:
+				self.eat(MINUS)
+				result = result - self.term()
 
 		return result
 
@@ -144,6 +162,8 @@ def main():
 	
 		if not text:
 			continue
+		if text.lower() == 'exit':
+			break
 		lexer = Lexer(text)
 		interpreter = Interpreter(lexer)
 		result = interpreter.expr()
