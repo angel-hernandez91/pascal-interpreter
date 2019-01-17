@@ -12,3 +12,8 @@ class Num(AST):
 		self.token = token
 		self.value = token.value
 
+class Char(AST):
+	def __init__(self, token):
+		self.token = token
+		self.value = token.value
+
